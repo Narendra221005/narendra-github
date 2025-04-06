@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <style>
+        /* General Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(to right, #83a4d4, #b6fbff);
+            font-family: 'Roboto', sans-serif;
+            color: #fff;
+            transition: background 0.5s ease;
+        }
+
+        .app-container {
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            width: 320px;
+            transition: background-color 0.5s ease;
+        }
+
+        header h1 {
+            font-size: 36px;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .theme-toggle {
+            background-color: transparent;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        button, .theme-toggle {
+            padding: 12px 25px;
+            font-size: 18px;
+            background-color: #1e90ff;
+            color: white;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            margin: 10px 0;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover, .theme-toggle:hover {
+            background-color: #0066cc;
+        }
+
+        .weather-container input {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 30px;
+            margin-bottom: 20px;
+            outline: none;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        .weather-container input:focus {
+            border-color: #1e90ff;
+        }
+
+        /* Weather Info */
+        .weather-info {
+            display: none;
+            background-color: #fff;
+            color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-top: 30px;
+            transition: opacity 0.5s ease;
+        }
+
+        .weather-info h2 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .weather-info h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .weather-info p {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .weather-info img {
+            width: 50px;
+            height: 50px;
+            margin-right: 15px;
+        }
+
+        /* Light theme */
+        .light-theme {
+            background-color: #f1f1f1;
+            color: #333;
+        }
+
+        .light-theme .app-container {
+            background-color: #fff;
+        }
+
+        /* Dark theme */
+        .dark-theme {
+            background-color: #333;
+            color: #f1f1f1;
+        }
+
+        .dark-theme .app-container {
+            background-color: #444;
+        }
+
+        /* Card-like Design for Weather Info */
+        .weather-info-card {
+            background: #fff;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            color: #333;
+            transition: transform 0.3s ease;
+        }
+
+        .weather-info-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .weather-info-card h3 {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .fadeIn {
+            animation: fadeIn 1s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Weather App</h1>
+            <button class="theme-toggle" id="theme-toggle">🌙</button>
+        </header>
+
+        <div class="weather-container">
+            <button id="get-location">Get Current Location Weather</button>
+            <div>
+                <input type="text" id="city" placeholder="Enter city" />
+                <button id="get-weather">Get Weather</button>
+            </div>
+
+            <!-- Weather Info Section -->
+            <div class="weather-info" id="weather-info">
+                <div class="weather-info-card">
+                    <h2 id="location"></h2>
+                    <h3 id="temp"></h3>
+                    <p id="description"></p>
+                    <p id="humidity"></p>
+                    <p id="wind"></p>
+                    <img id="weather-icon" src="" alt="weather icon" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = "ab4fb14ff0db23124e2c142b6b37ebad";  // Get an API key from https://openweathermap.org/
+
+        // Toggle between light and dark themes
+        const themeToggleButton = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        themeToggleButton.addEventListener('click', () => {
+            body.classList.toggle('dark-theme');
+            body.classList.toggle('light-theme');
+
+            // Change the icon for theme toggle
+            if (body.classList.contains('dark-theme')) {
+                themeToggleButton.textContent = '☀️'; // Sun for dark theme
+            } else {
+                themeToggleButton.textContent = '🌙'; // Moon for light theme
+            }
+        });
+
+        // Fetch weather data for the current location
+        const locationButton = document.getElementById('get-location');
+        const weatherInfo = document.getElementById('weather-info');
+        const locationElement = document.getElementById('location');
+        const tempElement = document.getElementById('temp');
+        const descriptionElement = document.getElementById('description');
+        const humidityElement = document.getElementById('humidity');
+        const windElement = document.getElementById('wind');
+        const weatherIcon = document.getElementById('weather-icon');
+        const cityInput = document.getElementById('city');
+        const weatherButton = document.getElementById('get-weather');
+
+        locationButton.addEventListener('click', getWeatherForCurrentLocation);
+        weatherButton.addEventListener('click', getWeatherForCity);
+
+        function getWeatherForCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    const apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${apiKey}`;
+
+                    fetch(apiUrl)
+                        .then(response => response.json())
+                        .then(data => {
+                            displayWeather(data);
+                        })
+                        .catch(error => {
+                            alert('Error fetching weather data');
+                        });
+                }, error => {
+                    alert('Geolocation not supported or permission denied');
+                });
+            } else {
+                alert('Geolocation is not supported by this browser.');
+            }
+        }
+
+        function getWeatherForCity() {
+            const city = cityInput.value;
+            if (city === '') {
+                alert('Please enter a city name');
+                return;
+            }
+
+            const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
+
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    displayWeather(data);
+                })
+                .catch(error => {
+                    alert('City not found');
+                });
+        }
+
+        function displayWeather(data) {
+            const { name, main, weather, wind } = data;
+
+            locationElement.textContent = `${name}, ${data.sys.country}`;
+            tempElement.textContent = `${main.temp}°C`;
+            descriptionElement.textContent = weather[0].description;
+            humidityElement.textContent = `Humidity: ${main.humidity}%`;
+            windElement.textContent = `Wind Speed: ${wind.speed} m/s`;
+            weatherIcon.src = `https://openweathermap.org/img/wn/${weather[0].icon}.png`;
+
+            weatherInfo.style.display = 'block';
+            weatherInfo.classList.add('fadeIn');
+        }
+    </script>
+</body>
+</html>
